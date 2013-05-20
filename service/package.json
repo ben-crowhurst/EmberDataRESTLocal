@@ -1,0 +1,10 @@
+{
+    "name": "mobaq",
+    "description": "Capita mobaq service",
+    "version": "0.0.1",
+    "private": true,
+    "dependencies": {
+        "jquery": "",
+        "express": "3.x"
+    }
+}

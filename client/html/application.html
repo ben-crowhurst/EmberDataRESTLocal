@@ -1,0 +1,70 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <meta charset="utf-8"/>
+        <title>LocalStorage</title>
+        <base href="../" target="_blank" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no" />
+        <link rel="stylesheet" media="all" href="style/application.css"/>
+
+        <script src="script/library/uuid.js"></script>
+        <script src="script/library/jquery.js"></script>
+        <script src="script/library/handlebars.js"></script>
+        <script src="script/library/ember.js"></script>
+        <script src="script/library/ember-data.js"></script>
+
+        <script src="script/library/crypto/aes.js"></script>
+        <script src="script/library/crypto/pbkdf2.js"></script>
+        <script src="script/library/jquery-throttle.js"></script>
+
+        <script src="script/application.js"></script>
+
+        <script src="script/router/router.js"></script>
+        <script src="script/router/route/notebook/index.js"></script>
+        
+        <script src="script/data/adapter.js"></script>
+        <script src="script/data/store.js"></script>
+
+        <script src="script/model/notebook.js"></script>
+
+        <script src="script/controller/notebook/index.js"></script>
+    </head>
+    <body class="container">
+        <script type="text/x-handlebars" data-template-name="application">
+            <section>
+                {{outlet}}
+            </section>
+        </script>
+
+        <script type="text/x-handlebars" data-template-name="index">
+            {{#linkTo notebook.index}}
+                Open Notebook
+            {{/linkTo}}
+        </script>
+
+        <script type="text/x-handlebars" data-template-name="notebook">
+            {{outlet}}
+        </script>  
+
+        <script type="text/x-handlebars" data-template-name="notebook/index">
+            <p>
+                <h1>
+                    Notebook
+                </h1>
+            </p>
+            <button {{action clear}}>Clear Models</button>
+            <button {{action create}}>Create Model</button>
+            <pre>                
+                <h3>
+                    Entries:
+                    <hr/>
+                </h3>
+                {{#each entry in content}}
+                    id: {{entry.id}}
+                    title: {{entry.title}}
+                    notes: {{entry.notes}}
+                {{/each}}
+            </pre>
+        </script> 
+    </body>
+</html>
