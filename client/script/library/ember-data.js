@@ -1355,7 +1355,7 @@ DS.Store = Ember.Object.extend(DS._Mappable, {
       newly created record.
     @returns DS.Model
   */
-  createRecord: function(type, properties, transaction) {
+  createRecord: function(type, properties, transaction) {    
     properties = properties || {};
 
     // Create a new instance of the model `type` and put it
@@ -2503,7 +2503,6 @@ DS.Store = Ember.Object.extend(DS._Mappable, {
   // ..........................
 
   materializeRecord: function(reference) {
-    console.log(reference);
     var record = reference.type._create({
       id: reference.id,
       store: this,

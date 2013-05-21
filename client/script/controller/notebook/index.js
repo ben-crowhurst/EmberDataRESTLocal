@@ -8,7 +8,8 @@ Application.NotebookIndexController = Ember.ArrayController.extend({
         localStorage.clear();
     },
     delete: function(record) {
-
+        record.deleteRecord();
+        record.get('transaction').commit();
     },
     create: function() {
         var notebook = Application.Notebook.createRecord({
@@ -16,5 +17,7 @@ Application.NotebookIndexController = Ember.ArrayController.extend({
             title: 'Test Notebook Title',
             notes: 'some random notes on this entry'
         });
+
+        notebook.get('transaction').commit();
     }
 });
