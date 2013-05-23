@@ -1,6 +1,6 @@
 Application.Store = DS.Store.extend({
     revision: 12,
-    adapter: 'Application.Adapter',
+    adapter: Application.Adapter.create(),
     openLocalStorage: function(username, password) {
         sessionStorage.username = username;
 
@@ -11,50 +11,116 @@ Application.Store = DS.Store.extend({
         this.overrideCreateRecord();
     },
     saveLocalStorageRecord: function(record) {
-        // record.eachRelationship(function(name, relationship) {
-        //   if (relationship.kind === 'belongsTo') {
-        //     console.log('belongsTo');
-        //   } else if (relationship.kind === 'hasMany') {
-        //     console.log('hasMany');
-        //   }
-        // }, this);
 
-        console.log(this);
-        console.log(this.adapter.get('serializer').materialize(record, record.serialize({includeId: true}), {}));
+        console.log('saving');
 
-        var key = this.generateLocalStorageKey(record);
+        console.log(record.materializeBelongsTo())
 
-        var value = record.serialize({includeId: true});
-        value.isDirty = record.get('isDirty');
-        value = this.encrypt(JSON.stringify(value));
+        record.eachRelationship(function(name, relationship) {
+          if (relationship.kind === 'belongsTo') {
+            console.log('belongsTo: ', name, relationship);
 
-        localStorage.setItem(key, value);
+            //relationship.options.embedded = 'always';
+
+            var parent = record.cacheFor(name);
+
+            console.log(parent); //typeForRelationship;
+
+            console.log(this.get('store.adapter.serializer')); //typeForRelationship;
+            console.log(this.get('store.adapter.serializer.mappings')); //typeForRelationship;
+
+
+            var data = {};
+            data.notebook = parent.serialize({includeId: true});
+
+            this.get('store.adapter.serializer').addRelationships(data.notebook, parent);
+
+            console.log(JSON.stringify(data));
+
+            //var serializer = Ember.copy(this.get('adapter.serializer'));
+
+
+
+            //var data = parent.serialize({includeId: true});
+
+            //var key = this.generateLocalStorageKey(data.id);
+
+
+            //var type = record.constructor.toString();
+            //type = type.substring(type.indexOf('.') + 1);
+        
+            //var key = {
+            //    id: record.get('id'),
+            //    type: type,
+            //    username: sessionStorage.username
+            //};
+
+        //return JSON.stringify(key);
+
+            localStorage.setItem(data.notebook.id, JSON.stringify(data));
+
+            //console.log('cacheFor: ', JSON.stringify(data));
+          } //else if (relationship.kind === 'hasMany') {
+            //console.log('hasMany: ', name, relationship);
+            //console.log('cacheFor: ', record.cacheFor(name));
+          //}
+        }, record);
+
+        //console.log('record: ', record);
+
+
+
+        //var key = this.generateLocalStorageKey(record);
+
+        //var value = record.serialize({includeId: true});
+        //value.isDirty = record.get('isDirty');
+        //value = this.encrypt(JSON.stringify(value));
+
+        //localStorage.setItem(key, value);
     },
     unloadLocalStorageRecord: function(record) {
         localStorage.removeItem(this.generateLocalStorageKey(record));
     },
     loadLocalStorageRecord: function(key) {
-        var encrypted = localStorage.getItem(JSON.stringify(key));
+        //var encrypted = localStorage.getItem(JSON.stringify(key));
+
+        var encrypted = localStorage.getItem(key);
 
         return JSON.parse(this.decrypt(encrypted));
     },
     loadLocalStorageRecords: function() {
         for (var index = 0; index < localStorage.length; index++) {
-            var key = JSON.parse(localStorage.key(index));
+            var key = localStorage.key(index);
+            //var key = JSON.parse(localStorage.key(index));
 
-            if (key.username === sessionStorage.username) {
+            console.log('key: ', key);
+
+            //if (key.username === sessionStorage.username) {
                 var record = this.loadLocalStorageRecord(key);
 
-                this.load(Application[key.type], record);
+                console.log('record: ', record);
 
-                var model = this.find(Application[key.type], record.id);
+                //delete record.notebook.nominals[0].notebook_id;
+                //delete record.notebook.nominals[1].notebook_id;
 
-                if (record.isDirty) {
-                    model.get('stateManager').transitionTo('created');
-                }
+                console.log('record: ', JSON.stringify(record));
+
+                this.get('adapter').load(this, Application.Notebook, record.notebook);
+
+                //var model = this.find(Application[key.type], record.id);
+                var model = this.find(Application.Notebook, record.notebook.id);
+
+                //model.resolve();
+                //model.updateRecordArrays();
+
+                console.log('loaded model: ', model);
+
+                //if (record.isDirty) {
+                //    model.get('stateManager').transitionTo('created');
+                //}
 
                 this.extendModel(model);
-            }
+            //}
         }
     },
     overrideCreateRecord: function() {
@@ -85,6 +151,8 @@ Application.Store = DS.Store.extend({
                 }                
             }).observes('isDeleted')
         });
+
+        //dataDidChange
     },
     encrypt: function(value) {
         return value; //CryptoJS.AES.encrypt(value, sessionStorage.passphrase);

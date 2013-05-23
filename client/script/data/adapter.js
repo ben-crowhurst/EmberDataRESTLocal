@@ -6,3 +6,9 @@ Application.Adapter = DS.RESTAdapter.extend({
         this.didDeleteRecord(store, type, record);
     }
 });
+
+Application.Adapter.map('Application.Notebook', {
+    nominals: {
+        embedded: 'load'
+    }
+});

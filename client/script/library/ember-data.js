@@ -1355,7 +1355,7 @@ DS.Store = Ember.Object.extend(DS._Mappable, {
       newly created record.
     @returns DS.Model
   */
-  createRecord: function(type, properties, transaction) {    
+  createRecord: function(type, properties, transaction) {
     properties = properties || {};
 
     // Create a new instance of the model `type` and put it
