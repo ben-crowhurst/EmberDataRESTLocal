@@ -7,8 +7,8 @@ Application.Adapter = DS.RESTAdapter.extend({
     }
 });
 
-Application.Adapter.map('Application.Notebook', {
-    nominals: {
-        embedded: 'always'
-    }
-});
+// Application.Adapter.map('Application.Notebook', {
+//     nominals: {
+//         embedded: 'loaded'
+//     }
+// });

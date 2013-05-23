@@ -24,11 +24,18 @@ Application.NotebookIndexController = Ember.ArrayController.extend({
             surname: 'Crowhurst'
         }));
 
-        notebook.get('nominals').pushObject(Application.Nominal.createRecord({
+        var nominal = Application.Nominal.createRecord({
             id: uuid.v4(),
             forename: 'Tom',
             surname: 'Crowhurst'
-        }));        
+        });
+
+        nominal.set('vehicle', Application.Vehicle.createRecord({
+            id: uuid.v4(),
+            vrm: 'SB53YUK'
+        }));
+
+        notebook.get('nominals').pushObject(nominal);      
     },
     upload: function() {
         this.get('store').commit();
