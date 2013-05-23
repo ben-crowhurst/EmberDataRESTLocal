@@ -28,7 +28,7 @@ Application.NotebookIndexController = Ember.ArrayController.extend({
             id: uuid.v4(),
             forename: 'Tom',
             surname: 'Crowhurst'
-        }));
+        }));        
     },
     upload: function() {
         this.get('store').commit();

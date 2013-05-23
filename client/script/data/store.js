@@ -26,8 +26,8 @@ Application.Store = DS.Store.extend({
 
             console.log(parent); //typeForRelationship;
 
-            console.log(this.get('store.adapter.serializer')); //typeForRelationship;
-            console.log(this.get('store.adapter.serializer.mappings')); //typeForRelationship;
+            //console.log(this.get('store.adapter.serializer')); //typeForRelationship;
+           // console.log(this.get('store.adapter.serializer.mappings')); //typeForRelationship;
 
 
             var data = {};
@@ -35,7 +35,7 @@ Application.Store = DS.Store.extend({
 
             this.get('store.adapter.serializer').addRelationships(data.notebook, parent);
 
-            console.log(JSON.stringify(data));
+            console.log('DATA WITH RELATIONSHIPS: ', JSON.stringify(data));
 
             //var serializer = Ember.copy(this.get('adapter.serializer'));
 
