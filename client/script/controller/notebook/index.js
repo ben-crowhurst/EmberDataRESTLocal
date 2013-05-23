@@ -2,7 +2,7 @@ Application.NotebookIndexController = Ember.ArrayController.extend({
     init: function() {
         this._super.apply(this, arguments);
 
-        this.get('store').openLocalStorage('admin', 'user_oneway_key');
+        this.get('store').openLocalStorage('admin', 'password');
     },
     clear: function() {
         localStorage.clear();
@@ -18,6 +18,19 @@ Application.NotebookIndexController = Ember.ArrayController.extend({
             notes: 'some random notes on this entry'
         });
 
-        notebook.get('transaction').commit();
+        notebook.get('nominals').pushObject(Application.Nominal.createRecord({
+            id: uuid.v4(),
+            forename: 'Ben',
+            surname: 'Crowhurst'
+        }));
+
+        notebook.get('nominals').pushObject(Application.Nominal.createRecord({
+            id: uuid.v4(),
+            forename: 'Tom',
+            surname: 'Crowhurst'
+        }));
+    },
+    upload: function() {
+        this.get('store').commit();
     }
 });

@@ -1,26 +1,32 @@
 Application.Store = DS.Store.extend({
     revision: 12,
     adapter: 'Application.Adapter',
-    createRecord: function() {
-        var record = this._super.apply(this, arguments);
-
-        this.saveLocalStorageRecord(record);
-
-        this.extendRecord(record);
-
-        return record;
-    },
     openLocalStorage: function(username, password) {
         sessionStorage.username = username;
 
         sessionStorage.passphrase = this.generatePassphrase(username, password);
 
         this.loadLocalStorageRecords();
+
+        this.overrideCreateRecord();
     },
     saveLocalStorageRecord: function(record) {
+        // record.eachRelationship(function(name, relationship) {
+        //   if (relationship.kind === 'belongsTo') {
+        //     console.log('belongsTo');
+        //   } else if (relationship.kind === 'hasMany') {
+        //     console.log('hasMany');
+        //   }
+        // }, this);
+
+        console.log(this);
+        console.log(this.adapter.get('serializer').materialize(record, record.serialize({includeId: true}), {}));
+
         var key = this.generateLocalStorageKey(record);
 
-        var value = this.encryptRecord(record);
+        var value = record.serialize({includeId: true});
+        value.isDirty = record.get('isDirty');
+        value = this.encrypt(JSON.stringify(value));
 
         localStorage.setItem(key, value);
     },
@@ -30,7 +36,7 @@ Application.Store = DS.Store.extend({
     loadLocalStorageRecord: function(key) {
         var encrypted = localStorage.getItem(JSON.stringify(key));
 
-        return this.decryptRecord(encrypted);
+        return JSON.parse(this.decrypt(encrypted));
     },
     loadLocalStorageRecords: function() {
         for (var index = 0; index < localStorage.length; index++) {
@@ -41,16 +47,35 @@ Application.Store = DS.Store.extend({
 
                 this.load(Application[key.type], record);
 
-                record = this.find(Application[key.type], record.id);
+                var model = this.find(Application[key.type], record.id);
 
-                this.extendRecord(record);
+                if (record.isDirty) {
+                    model.get('stateManager').transitionTo('created');
+                }
+
+                this.extendModel(model);
             }
         }
     },
-    extendRecord: function(record) {
+    overrideCreateRecord: function() {
+        this.reopen({
+            createRecord: function(type, properties, transaction) {
+                var model = this._super.apply(this, arguments);
+
+                Ember.run.once(this, function() {
+                    this.extendModel(model);
+
+                    this.saveLocalStorageRecord(model);
+                });
+
+                return model;
+            }
+        });    
+    },
+    extendModel: function(record) {
         record.reopen({
             updateLocalStorageRecord: $.debounce(1000, function() {
-                if (this.get('isDirty') && !this.get('isDeleted')) {
+                if (this.get('isDirty') || this.get('isValid') && !this.get('isDeleted')) {
                     this.get('store').saveLocalStorageRecord(this);
                 }
             }).observes('isDirty'),
@@ -61,15 +86,11 @@ Application.Store = DS.Store.extend({
             }).observes('isDeleted')
         });
     },
-    encryptRecord: function(record) {
-        var value = JSON.stringify(record.toJSON({includeId: true}));
-
-        return CryptoJS.AES.encrypt(value, sessionStorage.passphrase);
+    encrypt: function(value) {
+        return value; //CryptoJS.AES.encrypt(value, sessionStorage.passphrase);
     },
-    decryptRecord: function(encrypted) {
-        var decrypted = CryptoJS.AES.decrypt(encrypted, sessionStorage.passphrase);
-
-        return JSON.parse(decrypted.toString(CryptoJS.enc.Utf8));
+    decrypt: function(value) {
+        return value; //CryptoJS.AES.decrypt(value, sessionStorage.passphrase).toString(CryptoJS.enc.Utf8);
     },
     generatePassphrase: function(username, password) {
         return CryptoJS.PBKDF2(username, password, {

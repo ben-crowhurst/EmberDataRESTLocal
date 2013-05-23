@@ -25,6 +25,7 @@
         <script src="script/data/adapter.js"></script>
         <script src="script/data/store.js"></script>
 
+        <script src="script/model/nominal.js"></script>
         <script src="script/model/notebook.js"></script>
 
         <script src="script/controller/notebook/index.js"></script>
@@ -54,6 +55,7 @@
             </p>
             <button {{action clear}}>Clear Models</button>
             <button {{action create}}>Create Model</button>
+            <button {{action upload}}>Upload Model</button>
             <pre>                
                 <h3>
                     Entries:
@@ -63,6 +65,10 @@
                     id: {{entry.id}}
                     title: {{entry.title}}
                     notes: {{entry.notes}}
+                    {{#each nominal in entry.nominals}}
+                        forename: {{nominal.forename}}
+                        surname: {{nominal.surname}}
+                    {{/each}}
                     <button {{action delete entry}}>Delete Model</button>
                 {{/each}}
             </pre>

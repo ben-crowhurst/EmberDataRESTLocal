@@ -7,6 +7,11 @@ service.use(express.bodyParser());
 
 service.get('/notebooks', notebook.read);
 service.post('/notebooks', notebook.create);
+service.put('/notebooks/:id', notebook.create);
+
+service.get('/nominals', notebook.read);
+service.post('/nominals', notebook.create);
+service.put('/nominals/:id', notebook.create);
 
 service.use(express.static(__dirname + '/../../client/'));
 
