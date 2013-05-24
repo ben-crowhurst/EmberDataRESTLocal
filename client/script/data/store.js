@@ -1,80 +1,93 @@
 Application.Store = DS.Store.extend({
     revision: 12,
     adapter: Application.Adapter.create(),
-    openLocalStorage: function(username, password) {
-        sessionStorage.username = username;
+    openCache: function(username, password) {
+        Application.cache = Application.Cache.create();
 
-        sessionStorage.passphrase = this.generatePassphrase(username, password);
+        Application.cache.open(username, password);
 
-        this.loadLocalStorageRecords();
+        this.loadCache();
 
         this.overrideCreateRecord();
     },
     saveLocalStorageRecord: function(record) {
-        var data = record.serialize({includeId: true});
+        var store = this;
+        var adapter = store.get('adapter');
+        var serializer = adapter.get('serializer');
+
+        var serialized = record.serialize({includeId: true});
+
+        serialized.meta = {};
+        serialized.meta.dirty = record.get('isDirty');
+        serialized.meta.type = record.constructor.toString();
 
         record.eachRelationship(function(name, relationship) {
-          if (relationship.kind === 'hasMany') {
-             this.get('store.adapter.serializer').addHasMany(data, this, 'notebook', relationship);
+            var record = this;
 
-            var nominals = this.get(relationship.key).toArray();
+            if (relationship.kind === 'hasMany') {
+                serializer.addHasMany(serialized, record, 'notebook', relationship);
 
-            data.hasMany = {};
-            data.hasMany[relationship.key] = [];
+                var nominals = record.get(relationship.key).toArray();
 
-            for(var index = 0; index != nominals.length; index++) {
-                data.hasMany[relationship.key].push(nominals[index].id);
+                serialized.meta.hasManyRelationships = {};
+                serialized.meta.hasManyRelationships[relationship.key] = [];
+
+                for(var index = 0; index != nominals.length; index++) {
+                    serialized.meta.hasManyRelationships[relationship.key].push(nominals[index].id);
+                }
             }
-          }
         }, record);
 
-
-        localStorage.setItem(this.generateLocalStorageKey(record), JSON.stringify(data));
+        Application.cache.set(record.get('id'), JSON.stringify(serialized));
     },
-    unloadLocalStorageRecord: function(record) {
-        localStorage.removeItem(this.generateLocalStorageKey(record));
+    loadCache: function() {
+        var store = this;
+        var adapter = store.get('adapter');
+
+        Application.cache.each(function(id, type, object) {
+            adapter.load(store, type, object);
+
+            var meta = object.meta;
+
+            if (!Ember.isNone(meta.hasManyRelationships)) {
+                var model = store.find(type, id);
+
+                model.one('didLoad', function() {
+                    store.loadRelationships(model, meta);
+                });
+            }
+
+            if (meta.dirty) {
+                model.get('stateManager').transitionTo('becomeDirty');
+            } else {
+                console.log(model, id);
+                model.get('stateManager').transistionTo('created');
+            }
+
+            //store._extend(model);
+        });
     },
-    loadLocalStorageRecord: function(key) {
-        var encrypted = localStorage.getItem(JSON.stringify(key));
+    loadRelationships: function(model, meta) {
+        var store = this;
 
-        return JSON.parse(this.decrypt(encrypted));
-    },
-    loadLocalStorageRecords: function() {
-        for (var index = 0; index < localStorage.length; index++) {
-            var key = JSON.parse(localStorage.key(index));
+        for (var relationship in meta.hasManyRelationships) {
+            var ids = meta.hasManyRelationships[relationship];
 
-            var value = this.loadLocalStorageRecord(key);
+            for (var index = 0; index != ids.length; index++) {
+                var id = ids[index];
 
-            this.get('adapter').load(this, Application[key.type], value, {});
-        }
+                var child = Application.cache.get(id);
 
-        for (var index = 0; index < localStorage.length; index++) {
-            var key = JSON.parse(localStorage.key(index));
+                var ch = store.find(Application[child.meta.type.substring(child.meta.type.indexOf('.') + 1)], id);
 
-            var record = this.loadLocalStorageRecord(key);
-
-            var model = this.find(Application[key.type], record.id);
-
-            for(var property in record.hasMany) {
-                var childern = record.hasMany[property];
-
-                for (var i = 0; i != childern.length; i++) {
-                    var ck = {
-                        id: childern[i],
-                        type: 'Nominal'
-                    };
-
-                    var child = this.loadLocalStorageRecord(ck);
-
-                    var ch = this.find(Application[ck.type], child.id);
-
-                    model.get(property).pushObject(ch);
-                }
+                model.get(relationship).pushObject(ch);
             }
         }
     },
     overrideCreateRecord: function() {
-        this.reopen({
+        var store = this;
+
+        store.reopen({
             createRecord: function(type, properties, transaction) {
                 var model = this._super.apply(this, arguments);
 
@@ -103,29 +116,6 @@ Application.Store = DS.Store.extend({
         });
 
         //dataDidChange
-    },
-    encrypt: function(value) {
-        return value; //CryptoJS.AES.encrypt(value, sessionStorage.passphrase);
-    },
-    decrypt: function(value) {
-        return value; //CryptoJS.AES.decrypt(value, sessionStorage.passphrase).toString(CryptoJS.enc.Utf8);
-    },
-    generatePassphrase: function(username, password) {
-        return CryptoJS.PBKDF2(username, password, {
-            keySize: 256/32
-        }).toString();
-    },
-    generateLocalStorageKey: function(record) {
-        var type = record.constructor.toString();
-        type = type.substring(type.indexOf('.') + 1);
-        
-        var key = {
-            id: record.get('id'),
-            type: type,
-            //username: sessionStorage.username
-        };
-
-        return JSON.stringify(key);
     }
 });
 

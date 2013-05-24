@@ -2,7 +2,7 @@ Application.NotebookIndexController = Ember.ArrayController.extend({
     init: function() {
         this._super.apply(this, arguments);
 
-        this.get('store').openLocalStorage('admin', 'password');
+        this.get('store').openCache('admin', 'password');
     },
     clear: function() {
         localStorage.clear();
