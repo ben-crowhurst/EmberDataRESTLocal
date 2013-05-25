@@ -54,14 +54,17 @@ Application.Store = DS.Store.extend({
 
                 model.one('didLoad', function() {
                     store.loadRelationships(model, meta);
-                });
-            }
 
-            if (meta.dirty) {
-                model.get('stateManager').transitionTo('becomeDirty');
-            } else {
-                console.log(model, id);
-                model.get('stateManager').transistionTo('created');
+                    //if (meta.dirty) {
+                        //model.send('becomeDirty');
+                        //model.get('stateManager').transitionTo('becomeDirty');
+                        //model.get('stateManager').transitionTo('loaded.created.uncommitted');
+                    //} else {
+                    //    console.log(model, id);
+                        //model.get('stateManager').transistionTo('created');
+                    //    model.get('stateManager').transitionTo('loaded.updated');
+                    //}
+                });
             }
 
             //store._extend(model);
@@ -106,6 +109,8 @@ Application.Store = DS.Store.extend({
             updateLocalStorageRecord: $.debounce(1000, function() {
                 if (this.get('isDirty') || this.get('isValid') && !this.get('isDeleted')) {
                     this.get('store').saveLocalStorageRecord(this);
+
+                    console.log('isDirty saving...', this.get('id'));
                 }
             }).observes('isDirty'),
             deleteLocalStorageRecord: $.debounce(1000, function() {
