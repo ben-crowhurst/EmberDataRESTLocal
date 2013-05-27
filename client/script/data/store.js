@@ -55,15 +55,9 @@ Application.Store = DS.Store.extend({
                 model.one('didLoad', function() {
                     store.loadRelationships(model, meta);
 
-                    //if (meta.dirty) {
-                        //model.send('becomeDirty');
-                        //model.get('stateManager').transitionTo('becomeDirty');
-                        //model.get('stateManager').transitionTo('loaded.created.uncommitted');
-                    //} else {
-                    //    console.log(model, id);
-                        //model.get('stateManager').transistionTo('created');
-                    //    model.get('stateManager').transitionTo('loaded.updated');
-                    //}
+                    if (meta.dirty) {
+                        model.send('becomeDirty');
+                    }
                 });
             }
 
