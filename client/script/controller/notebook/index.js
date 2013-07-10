@@ -13,25 +13,21 @@ Application.NotebookIndexController = Ember.ArrayController.extend({
     },
     create: function() {
         var notebook = Application.Notebook.createRecord({
-            id: uuid.v4(),
             title: 'Test Notebook Title',
             notes: 'some random notes on this entry'
         });
 
         notebook.get('nominals').pushObject(Application.Nominal.createRecord({
-            id: uuid.v4(),
             forename: 'Ben',
             surname: 'Crowhurst'
         }));
 
         var nominal = Application.Nominal.createRecord({
-            id: uuid.v4(),
             forename: 'Tom',
             surname: 'Crowhurst'
         });
 
         nominal.set('vehicle', Application.Vehicle.createRecord({
-            id: uuid.v4(),
             vrm: 'SB53YUK'
         }));
 

@@ -28,7 +28,7 @@ Application.Cache = Ember.Object.extend({
 
         var value = encrypted; //CryptoJS.AES.decrypt(encrypted, sessionStorage.passphrase);
 
-        return JSON.parse(value.toString(CryptoJS.enc.Utf8));
+        return JSON.parse(value);//.toString(CryptoJS.enc.Utf8));
     },
     set: function(id, object) {
         var key = sessionStorage.username + ':' + id;
