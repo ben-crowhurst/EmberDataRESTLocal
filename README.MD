@@ -1,6 +1,6 @@
 EmberDataSetup
 ==============
-Example of ember-data with client-side Identifiers and a Nodejs backend.
+Example of ember-data with clientside localstorage and a Nodejs backend.
 
 Its not bug proof and is more a proof of concept.
 
