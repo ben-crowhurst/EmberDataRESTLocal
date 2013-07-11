@@ -1,171 +1,119 @@
 Application.Store = DS.Store.extend({
-    revision: 12,
-    cache: Application.Cache.create(),
     adapter: Application.Adapter.create(),
-    openCache: function(username, password) {
-        var cache = this.get('cache');
+    username: function(key, value) {
+        if (arguments.length !== 1) {
+            sessionStorage.username = value;
+        }
 
-        cache.open(username, password);
-
-        this.loadCache();
-
-        //this.overrideCreateRecord();
-        //http://www.embercasts.com/episodes/client-side-authentication-part-2
+        return sessionStorage.username;
+    }.property(),
+    passphrase: function() {
+        return sessionStorage.passphrase;
+    }.property(),
+    _generatePassphrase: function(username, password) {
+        sessionStorage.passphrase = CryptoJS.PBKDF2(username, password, {
+            keySize: 256/32
+        }).toString();
     },
-    saveLocalStorageRecord: function(record) {
+    loadRecordCache: function(username, password) {
         var store = this;
-        var cache = store.get('cache');
         var adapter = store.get('adapter');
-        var serializer = adapter.get('serializer');
 
-        var serialized = record.serialize({includeId: true});
+        store.set('username', username);
 
-        serialized.meta = {};
-        serialized.meta.dirty = record.get('isDirty');
-        serialized.meta.type = record.constructor.toString();
+        store._generatePassphrase(username, password);
 
-        record.eachRelationship(function(name, relationship) {
-            var record = this;
+        for (var index = 0; index < localStorage.length; index++) {
+            var key = localStorage.key(index);
 
-            if (relationship.kind === 'hasMany') {
-                var tokens = relationship.parentType.toString().split('.');
-                var parent = tokens[1].toLowerCase();
+            var id = key.substring(0, username.length);
 
-                serializer.addHasMany(serialized, record, parent, relationship);
-
-                var records = record.get(relationship.key).toArray();
-
-                serialized.meta.hasManyRelationships = {};
-                serialized.meta.hasManyRelationships[relationship.key] = [];
-
-                for(var index = 0; index != records.length; index++) {
-                    serialized.meta.hasManyRelationships[relationship.key].push(records[index].id);
-                }
+            if (username === key.substring(0, username.length)) {
+                //var value = JSON.parse(CryptoJS.AES.decrypt(localStorage.getItem(key), sessionStorage.passphrase).toString(CryptoJS.enc.Utf8));
+                var value = JSON.parse(localStorage.getItem(key));
+                var meta = value.meta;
+                var type = meta.type;
+            
+                adapter.load(store, Application[type], value);
             }
-        }, record);
+        }
 
-        cache.set(record.get('id'), JSON.stringify(serialized));
+        store._loadRecordCacheRelationships();
     },
-    // unloadLocalStorageRecord: function(record) {
-    //     console.log('deleting localstore record');
-
-    //     var store = this;
-    //     var cache = store.get('cache');
-
-    //     cache.set(record.id, null);
-    // },
-    loadCache: function() {
+    _loadRecordCacheRelationships: function() {
         var store = this;
-        var cache = store.get('cache');
-        var adapter = store.get('adapter');
 
-        cache.each(function(id, type, object) {
-            adapter.load(store, type, object);
+        for (var index = 0; index < localStorage.length; index++) {
+            var key = localStorage.key(index);
 
-            var meta = object.meta;
+            var username = store.get('username');
 
-            if (!Ember.isNone(meta.hasManyRelationships)) {
-                var model = store.find(type, id);
+            if (username === key.substring(0, username.length)) {
+                //var value = JSON.parse(CryptoJS.AES.decrypt(localStorage.getItem(key), sessionStorage.passphrase).toString(CryptoJS.enc.Utf8));
+                var value = JSON.parse(localStorage.getItem(key));
+                var meta = value.meta;
+                var type = meta.type;
 
-                model.one('didLoad', function() {
-                    store.loadRelationships(model, meta);
+                if (!Ember.isNone(meta.hasManyRelationships)) {
+                    var model = store.find(Application[type], value.id);
+
+                    for (var relationship in meta.hasManyRelationships) {
+                        var ids = meta.hasManyRelationships[relationship];
+
+                        for (var length = 0; length != ids.length; length++) {
+                            var id = ids[length];
+
+                            var child = JSON.parse(localStorage.getItem(store.get('username') + ':' + id));
+                            //var child = JSON.parse(CryptoJS.AES.decrypt(localStorage.getItem(store.get('username') + ':' + id), sessionStorage.passphrase).toString(CryptoJS.enc.Utf8));
+
+                            var ch = store.find(Application[child.meta.type], id);
+
+                            model.get(relationship).pushObject(ch);
+                        }
+                    }
 
                     if (meta.dirty) {
                         model.send('becomeDirty');
                     }
-                });
-            }
-
-            //http://stackoverflow.com/questions/15177723/delete-associated-model-with-ember-data
-            //store._extend(model);
-        });
-    },
-    loadRelationships: function(model, meta) {
-        var store = this;
-        var cache = store.get('cache');
-
-        for (var relationship in meta.hasManyRelationships) {
-            var ids = meta.hasManyRelationships[relationship];
-
-            for (var index = 0; index != ids.length; index++) {
-                var id = ids[index];
-
-                var child = cache.get(id);
-
-                var ch = store.find(Application[child.meta.type.substring(child.meta.type.indexOf('.') + 1)], id);
-
-                model.get(relationship).pushObject(ch);
+                }
             }
         }
     },
-    createRecord: function(type, properties, transaction) {
-        properties.id = uuid.v4();
+    saveRecordCache: function(record) {
+        var store = this;
+        var adapter = store.get('adapter');
+        var serializer = adapter.get('serializer');
 
-        var model = this._super.apply(this, arguments);
+        var key = store.get('username') + ':' + record.get('id');
 
-        Ember.run.once(this, function() {
-            this.extendModel(model);
+        var serialized = record.serialize({includeId:true});
+        serialized.meta = {};
+        serialized.meta.dirty = record.get('isDirty');
+        serialized.meta.type = record.constructor.toString().split('.')[1];
 
-            this.saveLocalStorageRecord(model);
-        });
+        record.eachRelationship(function(name, relationship) {
+          var record = this;
 
-        return model;
-    },
-    // overrideCreateRecord: function() {
-    //     var store = this;
+          if (relationship.kind === 'hasMany') {
+              var tokens = relationship.parentType.toString().split('.');
+              var parent = tokens[1].toLowerCase();
 
-    //     store.reopen({
-    //         createRecord: function(type, properties, transaction) {
-    //             properties.id = uuid.v4();
+              serializer.addHasMany(serialized, record, parent, relationship);
 
-    //             var model = this._super.apply(this, arguments);
+              var records = record.get(relationship.key).toArray();
 
-    //             Ember.run.once(this, function() {
-    //                 this.extendModel(model);
+              serialized.meta.hasManyRelationships = {};
+              serialized.meta.hasManyRelationships[relationship.key] = [];
 
-    //                 this.saveLocalStorageRecord(model);
-    //             });
+              for(var index = 0; index != records.length; index++) {
+                  serialized.meta.hasManyRelationships[relationship.key].push(records[index].id);
+              }
+          }
+        }, record);
 
-    //             return model;
-    //         }
-    //     });    
-    // },
-    extendModel: function(record) {
-        record.reopen({
-            // updateLocalStorageRecord: $.debounce(500, function() {
-            //     if (!this.get('isDeleted')) {
-            //         this.get('store').saveLocalStorageRecord(this);
+        var value = JSON.stringify(serialized);
+        //var value = CryptoJS.AES.encrypt(JSON.stringify(serialized), store.get('passphrase'));
 
-            //         console.log('isDirty saving...', this.get('id'));
-            //     }
-            // }).observes('isDirty'),
-            updateLocalStorageRecord: function() {
-                if (!this.get('isDeleted')) {
-                    this.get('store').saveLocalStorageRecord(this);
-
-                    console.log('isDirty saving...', this.get('id'));
-                }
-            }.observes('isDirty'),
-            didChangeData: function() {
-                this._super.apply(this, arguments);
-               console.log('did change data!!!');
-            },
-            deleteRecord: function() {
-                this._super.apply(this, arguments);
-
-                var store = this.get('store');
-                var cache = store.get('cache');
-
-                cache.set(record.id, null);
-            }
-            //deleteLocalStorageRecord: $.debounce(500, function() {
-                //if (this.get('isDeleted')) {
-            //        this.get('store').unloadLocalStorageRecord(this);
-                //}
-            //}).observes('isDeleted')
-        });
-
-        //dataDidChange
+        localStorage.setItem(key, value);
     }
 });
-

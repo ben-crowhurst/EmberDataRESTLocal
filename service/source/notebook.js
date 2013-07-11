@@ -5,7 +5,7 @@ exports.create = function(request, response) {
     
     console.log('created: ', record);
 
-    response.send({}, 201);
+    response.send({},201);
 };
 
 exports.read = function(request, response) {
