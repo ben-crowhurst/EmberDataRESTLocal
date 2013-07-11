@@ -3,43 +3,44 @@ window.Application = Ember.Application.create({
     LOG_TRANSITIONS: true
 });
 
-DS.Model.reopenClass({
-  createRecord: function(type, properties, transaction) {
-    var record = this._super.apply(this, arguments);
+// DS.Model.reopenClass({
+//   createRecord: function(type, properties, transaction) {
+//     var record = this._super.apply(this, arguments);
 
-    Ember.run.once(record, function() {
-      var record = this;
-      var store = record.get('store');
+//     Ember.run.once(record, function() {
+//       var record = this;
+//       var store = record.get('store');
 
-      store.saveRecordCache(record);
-    });
+//       store.saveRecordCache(record);
+//     });
 
-    return record;
-  }
-});
+//     return record;
+//   }
+// });
 
-DS.Model.reopen({
-  deleteRecord: function() {
-    var record = this;
-    record._super.apply(record, arguments);
+// DS.Model.reopen({
+//   deleteRecord: function() {
+//     var record = this;
+//     record._super.apply(record, arguments);
 
-    var store = this.get('store');
+//     var store = this.get('store');
 
-    var key = store.get('username') + ':' + record.get('id');
+//     var key = store.get('username') + ':' + record.get('id');
 
-    localStorage.removeItem(key);
-  },
-  send: function(name, context) {
-     this._super.apply(this, arguments);
+//     localStorage.removeItem(key);
+//   },
+//   send: function(name, context) {
+//     var record = this;
 
-     if (name === 'didSetProperty') {
-       this.cache();
-     }
-  },
-  cache: $.debounce(500, function() {
-    var record = this;
-    var store = record.get('store');
+//     record._super.apply(this, arguments);
 
-    store.saveRecordCache(record);
-  })
-});
+//      if (name === 'didSetProperty' || (name === 'didCommit' && !record.get('isDeleted'))) {
+//         Ember.run.debounce(this, function() {
+//           var record = this;
+//           var store = record.get('store');
+
+//           store.saveRecordCache(record);
+//         }, 500);
+//      }
+//   }
+// });
