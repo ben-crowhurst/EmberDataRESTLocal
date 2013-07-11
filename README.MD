@@ -13,7 +13,7 @@ Node Package Manager (npm) - https://npmjs.org/
 INSTALLATION
 ==============
 
-$ cd EmberDataClientsideId/service
+$ cd EmberDataRESTLocal/service
 
 $ npm install
 
