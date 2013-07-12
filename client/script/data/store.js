@@ -113,7 +113,7 @@ Application.Store = DS.Store.extend({
 
             record._super.apply(this, arguments);
 
-             if (name === 'didSetProperty' || (name === 'didCommit' && !record.get('isDeleted'))) {
+             if (name === 'becomeDirty' || name === 'didSetProperty' || (name === 'didCommit' && !record.get('isDeleted'))) {
                 Ember.run.debounce(this, function() {
                   var record = this;
                   var store = record.get('store');
