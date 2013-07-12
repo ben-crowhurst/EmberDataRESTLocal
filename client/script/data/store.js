@@ -153,6 +153,12 @@ Application.Store = DS.Store.extend({
               for(var index = 0; index != records.length; index++) {
                   serialized.meta.hasManyRelationships[relationship.key].push(records[index].id);
               }
+          } else if (relationship.kind === 'belongsTo') {
+              var parent = record.get(relationship.key);
+
+              if (!Ember.isNone(parent)) {
+                store.saveRecordCache(parent);
+              }
           }
         }, record);
 
