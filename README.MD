@@ -1,4 +1,4 @@
-EmberDataSetup
+Ember Data Spike
 ==============
 Example of ember-data with clientside localstorage and a Nodejs backend.
 
